@@ -1,0 +1,25 @@
+name: 'Objectstore Download'
+description: 'Objectstore download action for DownToZero.cloud'
+inputs:
+  api_key:
+    description: 'api key'
+    required: true
+  name:
+    description: 'name of the artifact'
+    required: true
+  object_key:
+    description: 'key of the objectstore, if empty name will be used'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: downloading with object_key
+      if: ${{ inputs.object_key != '' }}
+      run: |
+        curl --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}'   -H 'accept: */*'   -H 'X-API-KEY: ${{ inputs.api_key }}' -o @${{ inputs.name }} 
+      shell: bash
+    - name: downloading with artifact name
+      if: ${{ inputs.object_key == '' }}
+      run: |
+        curl --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}'   -H 'accept: */*'   -H 'X-API-KEY: ${{ inputs.api_key }}' -o @${{ inputs.name }} 
+      shell: bash
