@@ -10,16 +10,32 @@ inputs:
   object_key:
     description: 'key of the objectstore, if empty name will be used'
     required: false
+outputs:
+  hit:
+    description: 'true if download was successful, false otherwise'
+    value: ${{ steps.download.outputs.hit }}
 runs:
   using: "composite"
   steps:
     - name: downloading with object_key
+      id: download
       if: ${{ inputs.object_key != '' }}
       run: |
-        curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} 
+        HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "hit=true" >> $GITHUB_OUTPUT
+        else
+          echo "hit=false" >> $GITHUB_OUTPUT
+        fi
       shell: bash
     - name: downloading with artifact name
+      id: download
       if: ${{ inputs.object_key == '' }}
       run: |
-        curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} 
+        HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "hit=true" >> $GITHUB_OUTPUT
+        else
+          echo "hit=false" >> $GITHUB_OUTPUT
+        fi
       shell: bash
