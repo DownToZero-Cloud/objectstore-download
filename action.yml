@@ -13,12 +13,12 @@ inputs:
 outputs:
   hit:
     description: 'true if download was successful, false otherwise'
-    value: ${{ steps.download.outputs.hit }}
+    value: ${{ steps.download_with_key.outputs.hit || steps.download_with_name.outputs.hit }}
 runs:
   using: "composite"
   steps:
     - name: downloading with object_key
-      id: download
+      id: download_with_key
       if: ${{ inputs.object_key != '' }}
       run: |
         HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
@@ -29,7 +29,7 @@ runs:
         fi
       shell: bash
     - name: downloading with artifact name
-      id: download
+      id: download_with_name
       if: ${{ inputs.object_key == '' }}
       run: |
         HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
