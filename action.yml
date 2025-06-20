@@ -10,6 +10,10 @@ inputs:
   object_key:
     description: 'key of the objectstore, if empty name will be used'
     required: false
+  continue_on_error:
+    description: 'continue execution even if download fails (e.g., 404)'
+    required: false
+    default: 'false'
 outputs:
   hit:
     description: 'true if download was successful, false otherwise'
@@ -21,7 +25,11 @@ runs:
       id: download_with_key
       if: ${{ inputs.object_key != '' }}
       run: |
-        HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        if [ "${{ inputs.continue_on_error }}" = "true" ]; then
+          HTTP_CODE=$(curl --compressed --max-time 300 -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        else
+          HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.object_key }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        fi
         if [ "$HTTP_CODE" = "200" ]; then
           echo "hit=true" >> $GITHUB_OUTPUT
         else
@@ -32,7 +40,11 @@ runs:
       id: download_with_name
       if: ${{ inputs.object_key == '' }}
       run: |
-        HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        if [ "${{ inputs.continue_on_error }}" = "true" ]; then
+          HTTP_CODE=$(curl --compressed --max-time 300 -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        else
+          HTTP_CODE=$(curl --compressed --max-time 300 -f -L 'https://objectstore.dtz.rocks/api/2022-11-28/obj/${{ inputs.name }}' -H 'accept: */*' -H 'X-API-KEY: ${{ inputs.api_key }}' -o ${{ inputs.name }} -w "%{http_code}" -s)
+        fi
         if [ "$HTTP_CODE" = "200" ]; then
           echo "hit=true" >> $GITHUB_OUTPUT
         else
